@@ -1,0 +1,36 @@
+{
+  "name": "পুলিশ অ্যালার্ট ম্যাপ",
+  "short_name": "পুলিশ অ্যালার্ট",
+  "description": "কমিউনিটি ভিত্তিক পুলিশ সতর্কতা লাইভ ম্যাপ - Bangladesh",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#E63946",
+  "theme_color": "#E63946",
+  "orientation": "portrait-primary",
+  "lang": "bn",
+  "icons": [
+    {
+      "src": "images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["navigation", "utilities"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "লোকেশন যোগ করুন",
+      "short_name": "যোগ করুন",
+      "description": "নতুন পুলিশ লোকেশন যোগ করুন",
+      "url": "/?action=add",
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

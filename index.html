@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#E63946" />
+  <meta name="description" content="কমিউনিটি ভিত্তিক পুলিশ সতর্কতা লাইভ ম্যাপ - Bangladesh" />
+  <title>পুলিশ অ্যালার্ট ম্যাপ 🚨</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="images/icon-192.png" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ========== SPLASH ========== -->
+<div id="splash">
+  <div class="splash-content">
+    <div class="splash-icon">🚨</div>
+    <h1>পুলিশ অ্যালার্ট</h1>
+    <p>কমিউনিটি ভিত্তিক লাইভ ম্যাপ</p>
+    <div class="splash-loader"><div class="loader-bar"></div></div>
+    <p id="splashStatus" class="splash-status">সংযোগ হচ্ছে...</p>
+  </div>
+</div>
+
+<!-- ========== FIREBASE SETUP WIZARD ========== -->
+<div id="setupWizard" style="display:none">
+  <div class="setup-box">
+    <div class="setup-icon">🔥</div>
+    <h2>Firebase সেটআপ</h2>
+    <p>সব ডিভাইসে রিয়েল-টাইম সিঙ্ক চালু করতে Firebase config দিন।</p>
+    <p class="setup-sub">
+      <strong>গাইড:</strong> 
+      <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → 
+      নতুন প্রজেক্ট → Realtime Database তৈরি → Project Settings → Web App → Config কপি করুন
+    </p>
+    <textarea id="configInput" rows="9" spellcheck="false" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "myapp.firebaseapp.com",
+  "databaseURL": "https://myapp-default-rtdb.firebaseio.com",
+  "projectId": "myapp",
+  "storageBucket": "myapp.appspot.com",
+  "messagingSenderId": "1234567890",
+  "appId": "1:1234:web:abcdef"
+}'></textarea>
+    <button class="setup-btn" id="saveConfigBtn">✓ সংরক্ষণ করুন ও শুরু করুন</button>
+    <button class="setup-skip" id="skipSetupBtn">এড়িয়ে যান — শুধু এই ডিভাইসে কাজ করবে</button>
+    <div id="setupError" class="setup-error"></div>
+  </div>
+</div>
+
+<!-- ========== MAIN APP ========== -->
+<div id="app" style="display:none">
+
+  <header id="header">
+    <div class="header-left">
+      <span class="app-logo">🚨</span>
+      <div>
+        <h1 class="app-title">পুলিশ অ্যালার্ট</h1>
+        <span class="live-badge" id="liveBadge">● সংযুক্ত</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="hdr-btn" id="searchToggleBtn">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+      <button class="hdr-btn" id="filterBtn">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      </button>
+      <button class="hdr-btn" id="adminToggleBtn">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M12 14c-6 0-8 2.67-8 4v2h16v-2c0-1.33-2-4-8-4z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="searchBar" class="search-bar hidden">
+    <div class="search-inner">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="স্থান বা এলাকা খুঁজুন..." autocomplete="off" />
+      <button id="searchClearBtn" style="display:none">✕</button>
+    </div>
+    <div id="searchResults" class="search-results"></div>
+  </div>
+
+  <div id="filterBar" class="filter-bar hidden">
+    <button class="filter-chip active" data-type="all">সব</button>
+    <button class="filter-chip" data-type="Police">👮 পুলিশ</button>
+    <button class="filter-chip" data-type="Checkpost">🚧 চেকপোস্ট</button>
+    <button class="filter-chip" data-type="DB">🕵️ ডিবি</button>
+    <button class="filter-chip" data-type="Traffic">🚦 ট্রাফিক</button>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="map-controls">
+    <button class="map-ctrl-btn" id="locateBtn">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/><circle cx="12" cy="12" r="10"/></svg>
+    </button>
+    <button class="map-ctrl-btn" id="zoomInBtn">+</button>
+    <button class="map-ctrl-btn" id="zoomOutBtn">−</button>
+  </div>
+
+  <div id="statsBar" class="stats-bar">
+    <div class="stat-item"><span class="stat-num" id="totalCount">০</span><span class="stat-label">মোট</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><span class="stat-num police-color" id="policeCount">০</span><span class="stat-label">পুলিশ</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><span class="stat-num check-color" id="checkCount">০</span><span class="stat-label">চেকপোস্ট</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><span class="stat-num db-color" id="dbCount">০</span><span class="stat-label">ডিবি</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><span class="stat-num traffic-color" id="trafficCount">০</span><span class="stat-label">ট্রাফিক</span></div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="add-location-btn" id="addLocationBtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      লোকেশন যোগ করুন
+    </button>
+    <button class="list-btn" id="listViewBtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div id="addingOverlay" class="adding-overlay hidden">
+    <div class="adding-hint">
+      <span>📍 ম্যাপে ট্যাপ করুন লোকেশন মার্ক করতে</span>
+      <button id="cancelAddBtn">বাতিল</button>
+    </div>
+  </div>
+
+  <!-- ADD MODAL -->
+  <div id="addModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>নতুন সতর্কতা যোগ করুন</h2>
+        <button class="modal-close" id="closeAddModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>ধরন <span class="required">*</span></label>
+          <div class="type-grid" id="typeGrid">
+            <button class="type-btn active" data-type="Police"><span class="type-icon">👮</span><span>পুলিশ সার্জেন্ট</span></button>
+            <button class="type-btn" data-type="Checkpost"><span class="type-icon">🚧</span><span>চেকপোস্ট</span></button>
+            <button class="type-btn" data-type="DB"><span class="type-icon">🕵️</span><span>ডিবি পুলিশ</span></button>
+            <button class="type-btn" data-type="Traffic"><span class="type-icon">🚦</span><span>ট্রাফিক পুলিশ</span></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>লোকেশনের নাম <span class="optional">(ঐচ্ছিক)</span></label>
+          <input type="text" id="locName" placeholder="যেমন: মিরপুর ১০ গোল চত্বর" />
+        </div>
+        <div class="form-group">
+          <label>বিবরণ <span class="optional">(ঐচ্ছিক)</span></label>
+          <textarea id="locDesc" rows="3" placeholder="অতিরিক্ত তথ্য লিখুন..."></textarea>
+        </div>
+        <div class="coords-display">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span id="coordsText">—</span>
+        </div>
+        <div class="rate-limit-info">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          প্রতি ঘণ্টায় সর্বোচ্চ ১০টি রিপোর্ট করা যাবে
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="cancelAddModal">বাতিল</button>
+        <button class="btn-save" id="saveLocationBtn">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          সংরক্ষণ করুন
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIST PANEL -->
+  <div id="listPanel" class="side-panel hidden">
+    <div class="panel-header"><h2>সব রিপোর্ট</h2><button class="panel-close" id="closeListPanel">✕</button></div>
+    <div class="panel-filter"><input type="text" id="listSearchInput" placeholder="রিপোর্ট খুঁজুন..." /></div>
+    <div class="panel-body" id="listPanelBody"></div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="adminPanel" class="side-panel hidden">
+    <div class="panel-header"><h2>অ্যাডমিন প্যানেল</h2><button class="panel-close" id="closeAdminPanel">✕</button></div>
+    <div class="panel-body">
+      <div class="admin-stats">
+        <div class="admin-stat-card"><span id="adminTotal">০</span><small>মোট রিপোর্ট</small></div>
+        <div class="admin-stat-card"><span id="adminHidden">০</span><small>ভুল-হাইড</small></div>
+      </div>
+      <div class="admin-actions">
+        <button class="admin-action-btn danger" id="clearAllBtn">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          সব রিপোর্ট মুছুন
+        </button>
+        <button class="admin-action-btn" id="exportBtn">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          JSON ব্যাকআপ ডাউনলোড
+        </button>
+        <button class="admin-action-btn" id="importBtn">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          JSON ইমপোর্ট
+        </button>
+        <button class="admin-action-btn" id="reconfigBtn">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+          Firebase পুনরায় সেটআপ
+        </button>
+        <input type="file" id="importFile" accept=".json" style="display:none" />
+      </div>
+      <h3 class="admin-section-title">সব মার্কার</h3>
+      <div id="adminMarkerList" class="admin-marker-list"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- CONFIRM DIALOG -->
+  <div id="confirmDialog" class="modal-overlay hidden">
+    <div class="modal" style="max-width:300px">
+      <div class="modal-header"><h2 id="confirmTitle">নিশ্চিত করুন</h2></div>
+      <div class="modal-body"><p id="confirmMsg" style="color:#666;font-size:14px;line-height:1.6"></p></div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="confirmNo">না</button>
+        <button class="btn-save danger" id="confirmYes">হ্যাঁ, মুছুন</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- App -->
+<script src="js/firebase-db.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
