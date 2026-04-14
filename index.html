@@ -234,13 +234,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <!-- Leaflet -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    const map = L.map('map').setView([23.8103, 90.4125], 13);
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '© CARTO © OpenStreetMap',
-      maxZoom: 20
+  <script>
+    const map = L.map('map', { zoomControl: true }).setView([23.8103, 90.4125], 13);
+
+    // Google Maps road tiles — key লাগে না, বাংলাদেশে দ্রুত
+    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      attribution: '© Google Maps',
+      maxZoom: 20,
+      subdomains: ['mt0','mt1','mt2','mt3']
     }).addTo(map);
   </script>
 <!-- App -->
