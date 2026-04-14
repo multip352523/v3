@@ -25,31 +25,6 @@
   </div>
 </div>
 
-<!-- ========== FIREBASE SETUP WIZARD ========== -->
-<div id="setupWizard" style="display:none">
-  <div class="setup-box">
-    <div class="setup-icon">🔥</div>
-    <h2>Firebase সেটআপ</h2>
-    <p>সব ডিভাইসে রিয়েল-টাইম সিঙ্ক চালু করতে Firebase config দিন।</p>
-    <p class="setup-sub">
-      <strong>গাইড:</strong> 
-      <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → 
-      নতুন প্রজেক্ট → Realtime Database তৈরি → Project Settings → Web App → Config কপি করুন
-    </p>
-    <textarea id="configInput" rows="9" spellcheck="false" placeholder='{
-  "apiKey": "AIzaSy...",
-  "authDomain": "myapp.firebaseapp.com",
-  "databaseURL": "https://myapp-default-rtdb.firebaseio.com",
-  "projectId": "myapp",
-  "storageBucket": "myapp.appspot.com",
-  "messagingSenderId": "1234567890",
-  "appId": "1:1234:web:abcdef"
-}'></textarea>
-    <button class="setup-btn" id="saveConfigBtn">✓ সংরক্ষণ করুন ও শুরু করুন</button>
-    <button class="setup-skip" id="skipSetupBtn">এড়িয়ে যান — শুধু এই ডিভাইসে কাজ করবে</button>
-    <div id="setupError" class="setup-error"></div>
-  </div>
-</div>
 
 <!-- ========== MAIN APP ========== -->
 <div id="app" style="display:none">
